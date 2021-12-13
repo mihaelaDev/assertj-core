@@ -33,16 +33,6 @@ public class MapAssert_isUnmodifiable_Test {
   }
 
   @ParameterizedTest
-  @MethodSource("modifiableMaps")
-  void should_fail_if_actual_can_be_modified(Map<?, ?> actual, ErrorMessageFactory errorMessageFactory) {
-    //WHEN
-    AssertionError assertionError = expectAssertionError(() -> assertThat(actual).isUnmodifiable());
-    //THEN
-    then(assertionError).as(actual.getClass().getName())
-                        .hasMessage(errorMessageFactory.create());
-  }
-
-  @ParameterizedTest
   @MethodSource("unmodifiableMaps")
   void should_pass(Map<?, ?> actual) {
     //WHEN/THEN
@@ -54,15 +44,26 @@ public class MapAssert_isUnmodifiable_Test {
     return Stream.of(
       Collections.unmodifiableMap(new HashMap<>()),
       ImmutableMap.of(),
-      ImmutableMap.copyOf(new HashMap<>()),
-      UnmodifiableMap.unmodifiableMap(new HashMap<>())
+      ImmutableMap.copyOf(Maps.newHashMap("key", "value")),
+      UnmodifiableMap.unmodifiableMap(new HashMap<>()), //This does not override the Map.compute, computeIfAbsent, computeIfPresent, merge, putIfAbsent and other java 8 methods
+      UnmodifiableMap.unmodifiableMap(Maps.newHashMap("key", "value"))
     );
+  }
+
+  @ParameterizedTest
+  @MethodSource("modifiableMaps")
+  void should_fail_if_actual_can_be_modified(Map<?, ?> actual, ErrorMessageFactory errorMessageFactory) {
+    //WHEN
+    AssertionError assertionError = expectAssertionError(() -> assertThat(actual).isUnmodifiable());
+    //THEN
+    then(assertionError).as(actual.getClass().getName())
+                        .hasMessage(errorMessageFactory.create());
   }
 
   private static Stream<Arguments> modifiableMaps() {
     return Stream.of(
       arguments(new HashMap<>(), ShouldBeUnmodifiable.shouldBeUnmodifiable("Map.compute(null, (key, value) -> value)")),
-      arguments(Maps.newHashMap(null, null),
+      arguments(Maps.newHashMap("key", "value"),
                 ShouldBeUnmodifiable.shouldBeUnmodifiable("Map.compute(null, (key, value) -> value)")),
       arguments(new Hashtable<>(), ShouldBeUnmodifiable.shouldBeUnmodifiable("Map.compute(null, (key, value) -> value)")),
       arguments(new LinkedHashMap<>(), ShouldBeUnmodifiable.shouldBeUnmodifiable("Map.compute(null, (key, value) -> value)")),
