@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.internal;
 
@@ -345,7 +345,7 @@ public class DeepDifference {
     if (comparatorByPropertyOrField.containsKey(fieldName)) return true;
     // we know that dualKey.key1 != dualKey.key2 at this point, so one the key is not null
     Class<?> keyType = dualKey.key1 != null ? dualKey.key1.getClass() : dualKey.key2.getClass();
-    return comparatorByType.get(keyType) != null;
+    return comparatorByType.getComparatorForType(keyType) != null;
   }
 
   private static Deque<DualKey> initStack(Object a, Object b, List<String> parentPath,

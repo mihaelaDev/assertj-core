@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.internal;
 
@@ -94,7 +94,7 @@ public final class CommonValidations {
   }
 
   public static void failIfEmptySinceActualIsNotEmpty(Object[] values) {
-    if (values.length == 0) throw new AssertionError("actual is not empty");
+    if (values.length == 0) throw new AssertionError("actual is not empty while group of values to look for is.");
   }
 
   public static void hasSameSizeAsCheck(AssertionInfo info, Object actual, Object other, int sizeOfActual) {

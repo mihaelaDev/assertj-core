@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api.abstract_;
 
@@ -31,8 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for <code>{@link AbstractAssert#extracting(String, AssertFactory)}</code>.
- *
  * @author Stefano Cordio
  */
 class AbstractAssert_extracting_with_String_and_AssertFactory_Test implements NavigationMethodBaseTest<TestAssert> {

@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -42,13 +42,14 @@ import net.bytebuddy.matcher.ElementMatcher.Junction;
 
 class SoftProxies {
 
-  private static final Junction<MethodDescription> METHODS_CHANGING_THE_OBJECT_UNDER_TEST = methodsChangingTheObjectUnderTestNamed("asInstanceOf",
+  private static final Junction<MethodDescription> METHODS_CHANGING_THE_OBJECT_UNDER_TEST = methodsChangingTheObjectUnderTestNamed("asBase64Decoded",
+                                                                                                                                   "asBase64Encoded",
+                                                                                                                                   "asInstanceOf",
                                                                                                                                    "asList",
                                                                                                                                    "asString",
                                                                                                                                    "asHexString",
+                                                                                                                                   "cause",
                                                                                                                                    "content",
-                                                                                                                                   "decodedAsBase64",
-                                                                                                                                   "encodedAsBase64",
                                                                                                                                    "extracting",
                                                                                                                                    "extractingByKey",
                                                                                                                                    "extractingByKeys",
@@ -60,39 +61,42 @@ class SoftProxies {
                                                                                                                                    "flatExtracting",
                                                                                                                                    "flatMap",
                                                                                                                                    "get",
-                                                                                                                                   "getCause",
-                                                                                                                                   "getRootCause",
+                                                                                                                                   "getCause", // deprecated
+                                                                                                                                   "getRootCause", // deprecated
                                                                                                                                    "map",
+                                                                                                                                   "message",
                                                                                                                                    "newAbstractIterableAssert",
+                                                                                                                                   "rootCause",
+                                                                                                                                   "scale",
                                                                                                                                    "size",
                                                                                                                                    "succeedsWithin",
                                                                                                                                    "toAssert",
                                                                                                                                    "usingRecursiveComparison");
 
-  private static final Junction<MethodDescription> METHODS_NOT_TO_PROXY = methodsNamed("as").or(named("clone"))
-                                                                                            .or(named("describedAs"))
-                                                                                            .or(named("descriptionText"))
-                                                                                            .or(named("getWritableAssertionInfo"))
-                                                                                            .or(named("inBinary"))
-                                                                                            .or(named("inHexadecimal"))
-                                                                                            .or(named("newAbstractIterableAssert"))
-                                                                                            .or(named("newObjectArrayAssert"))
-                                                                                            .or(named("overridingErrorMessage"))
-                                                                                            .or(named("removeCustomAssertRelatedElementsFromStackTraceIfNeeded"))
-                                                                                            .or(named("succeedsWithin"))
-                                                                                            .or(named("failsWithin"))
-                                                                                            .or(named("usingComparator"))
-                                                                                            .or(named("usingDefaultComparator"))
-                                                                                            .or(named("usingElementComparator"))
-                                                                                            .or(named("withAssertionInfo"))
-                                                                                            .or(named("withAssertionState"))
-                                                                                            .or(named("withComparatorsForElementPropertyOrFieldNames"))
-                                                                                            .or(named("withComparatorsForElementPropertyOrFieldTypes"))
-                                                                                            .or(named("withFailMessage"))
-                                                                                            .or(named("withIterables"))
-                                                                                            .or(named("withRepresentation"))
-                                                                                            .or(named("withThreadDumpOnError"))
-                                                                                            .or(named("withTypeComparators"));
+  static final Junction<MethodDescription> METHODS_NOT_TO_PROXY = methodsNamed("as").or(named("clone"))
+                                                                                    .or(named("describedAs"))
+                                                                                    .or(named("descriptionText"))
+                                                                                    .or(named("getWritableAssertionInfo"))
+                                                                                    .or(named("inBinary"))
+                                                                                    .or(named("inHexadecimal"))
+                                                                                    .or(named("newAbstractIterableAssert"))
+                                                                                    .or(named("newObjectArrayAssert"))
+                                                                                    .or(named("overridingErrorMessage"))
+                                                                                    .or(named("removeCustomAssertRelatedElementsFromStackTraceIfNeeded"))
+                                                                                    .or(named("succeedsWithin"))
+                                                                                    .or(named("failsWithin"))
+                                                                                    .or(named("usingComparator"))
+                                                                                    .or(named("usingDefaultComparator"))
+                                                                                    .or(named("usingElementComparator"))
+                                                                                    .or(named("withAssertionInfo"))
+                                                                                    .or(named("withAssertionState"))
+                                                                                    .or(named("withComparatorsForElementPropertyOrFieldNames"))
+                                                                                    .or(named("withComparatorsForElementPropertyOrFieldTypes"))
+                                                                                    .or(named("withFailMessage"))
+                                                                                    .or(named("withIterables"))
+                                                                                    .or(named("withRepresentation"))
+                                                                                    .or(named("withThreadDumpOnError"))
+                                                                                    .or(named("withTypeComparators"));
 
   private static final ByteBuddy BYTE_BUDDY = new ByteBuddy().with(new AuxiliaryType.NamingStrategy.SuffixingRandom("AssertJ$SoftProxies"))
                                                              .with(TypeValidation.DISABLED);
@@ -128,6 +132,30 @@ class SoftProxies {
     SimpleKey cacheKey = new SimpleKey(assertClass);
     return (Class<ASSERT>) CACHE.findOrInsert(assertClass.getClassLoader(), cacheKey,
                                               () -> generateProxyClass(assertClass));
+  }
+
+  FileSizeAssert<?> createFileSizeAssertProxy(FileSizeAssert<?> fileSizeAssert) {
+    Class<?> proxyClass = createSoftAssertionProxyClass(FileSizeAssert.class);
+    try {
+      Constructor<?> constructor = proxyClass.getConstructor(AbstractFileAssert.class);
+      FileSizeAssert<?> proxiedAssert = (FileSizeAssert<?>) constructor.newInstance(fileSizeAssert.returnToFile());
+      ((AssertJProxySetup) proxiedAssert).assertj$setup(new ProxifyMethodChangingTheObjectUnderTest(this), collector);
+      return proxiedAssert;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  BigDecimalScaleAssert<?> createBigDecimalScaleAssertProxy(BigDecimalScaleAssert<?> bigDecimalScaleAssert) {
+    Class<?> proxyClass = createSoftAssertionProxyClass(BigDecimalScaleAssert.class);
+    try {
+      Constructor<?> constructor = proxyClass.getConstructor(AbstractBigDecimalAssert.class);
+      BigDecimalScaleAssert<?> proxiedAssert = (BigDecimalScaleAssert<?>) constructor.newInstance(bigDecimalScaleAssert.returnToBigDecimal());
+      ((AssertJProxySetup) proxiedAssert).assertj$setup(new ProxifyMethodChangingTheObjectUnderTest(this), collector);
+      return proxiedAssert;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   IterableSizeAssert<?> createIterableSizeAssertProxy(IterableSizeAssert<?> iterableSizeAssert) {
@@ -205,4 +233,5 @@ class SoftProxies {
     return publicMethods.or(forProxyProtectedMethods);
 
   }
+
 }

@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -82,6 +82,8 @@ public class ProxifyMethodChangingTheObjectUnderTest {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private AbstractAssert<?, ?> createAssertProxy(AbstractAssert<?, ?> currentAssert) {
     if (currentAssert instanceof IterableSizeAssert) return createIterableSizeAssertProxy(currentAssert);
+    if (currentAssert instanceof FileSizeAssert) return createFileSizeAssertProxy(currentAssert);
+    if (currentAssert instanceof BigDecimalScaleAssert) return createBigDecimalScaleAssertProxy(currentAssert);
     if (currentAssert instanceof MapSizeAssert) return createMapSizeAssertProxy(currentAssert);
     if (currentAssert instanceof RecursiveComparisonAssert)
       return createRecursiveComparisonAssertProxy((RecursiveComparisonAssert) currentAssert);
@@ -103,6 +105,16 @@ public class ProxifyMethodChangingTheObjectUnderTest {
     IterableSizeAssert<?> iterableSizeAssert = (IterableSizeAssert<?>) currentAssert;
     // can't use the usual way of building soft proxy since IterableSizeAssert takes 2 parameters
     return proxies.createIterableSizeAssertProxy(iterableSizeAssert);
+  }
+
+  private FileSizeAssert<?> createFileSizeAssertProxy(Object currentAssert) {
+    FileSizeAssert<?> fileSizeAssert = (FileSizeAssert<?>) currentAssert;
+    return proxies.createFileSizeAssertProxy(fileSizeAssert);
+  }
+
+  private BigDecimalScaleAssert<?> createBigDecimalScaleAssertProxy(Object currentAssert) {
+    BigDecimalScaleAssert<?> bigDecimalScaleAssert = (BigDecimalScaleAssert<?>) currentAssert;
+    return proxies.createBigDecimalScaleAssertProxy(bigDecimalScaleAssert);
   }
 
   @SuppressWarnings("rawtypes")

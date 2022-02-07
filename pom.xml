@@ -5,21 +5,21 @@
   <parent>
     <groupId>org.assertj</groupId>
     <artifactId>assertj-parent-pom</artifactId>
-    <version>2.2.14</version>
-    <relativePath/>
+    <version>2.2.16</version>
+    <relativePath />
   </parent>
 
   <artifactId>assertj-core</artifactId>
-  <version>3.21.1-SNAPSHOT</version>
+  <version>3.23.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>AssertJ fluent assertions</name>
   <description>Rich and fluent assertions for testing for Java</description>
 
   <scm>
-    <developerConnection>scm:git:git@github.com:assertj/assertj-core.git</developerConnection>
-    <connection>scm:git:git@github.com:assertj/assertj-core.git</connection>
-    <url>git@github.com:assertj/assertj-core</url>
+    <developerConnection>scm:git:https://github.com/assertj/assertj-core.git</developerConnection>
+    <connection>scm:git:https://github.com/assertj/assertj-core.git</connection>
+    <url>https://github.com/assertj/assertj-core</url>
     <tag>HEAD</tag>
   </scm>
   <issueManagement>
@@ -30,15 +30,15 @@
   <properties>
     <argLine>-Dfile.encoding=${project.build.sourceEncoding}</argLine>
     <javadocAdditionalOptions>-html5 --allow-script-in-comments --no-module-directories</javadocAdditionalOptions>
-    <byte-buddy.version>1.11.19</byte-buddy.version>
+    <byte-buddy.version>1.12.7</byte-buddy.version>
     <hamcrest.version>2.2</hamcrest.version>
     <opentest4j.version>1.2.0</opentest4j.version>
-    <bnd.version>6.0.0</bnd.version>
+    <bnd.version>6.1.0</bnd.version>
     <cdg.pitest.version>0.1.0</cdg.pitest.version>
     <!-- Dependency versions overriding -->
     <junit.version>4.13.2</junit.version>
-    <junit-jupiter.version>5.8.1</junit-jupiter.version>
-    <mockito.version>4.0.0</mockito.version>
+    <junit-jupiter.version>5.8.2</junit-jupiter.version>
+    <mockito.version>4.3.1</mockito.version>
     <!-- Plugin versions overriding -->
     <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
   </properties>
@@ -59,6 +59,11 @@
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest</artifactId>
         <version>${hamcrest.version}</version>
+      </dependency>
+      <dependency> <!-- Included by hibernate-core -->
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>jboss-logging</artifactId>
+        <version>3.4.3.Final</version>
       </dependency>
       <dependency>
         <groupId>org.opentest4j</groupId>
@@ -115,7 +120,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.13.0</version>
+      <version>2.13.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -127,7 +132,7 @@
     <dependency>
       <groupId>nl.jqno.equalsverifier</groupId>
       <artifactId>equalsverifier</artifactId>
-      <version>3.7.1</version>
+      <version>3.9</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -151,8 +156,20 @@
     <dependency>
       <groupId>org.eclipse.platform</groupId>
       <artifactId>org.eclipse.osgi</artifactId>
-      <version>3.17.0</version>
+      <version>3.17.100</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>6.0.0.CR1</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>jakarta.inject</groupId>
+          <artifactId>jakarta.inject-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.junit.platform</groupId>
@@ -189,7 +206,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-core</artifactId>
-      <version>5.3.10</version>
+      <version>5.3.15</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -221,7 +238,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore/>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -231,7 +248,7 @@
         <plugin>
           <groupId>com.github.siom79.japicmp</groupId>
           <artifactId>japicmp-maven-plugin</artifactId>
-          <version>0.15.4</version>
+          <version>0.15.6</version>
           <configuration>
             <dependencies>
               <dependency>
@@ -298,7 +315,7 @@
                     <exclude>*:*:*:jar:compile</exclude>
                   </excludes>
                 </bannedDependencies>
-                <dependencyConvergence/>
+                <dependencyConvergence />
                 <requireJavaVersion>
                   <version>[11,)</version>
                 </requireJavaVersion>
@@ -333,7 +350,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>@{argLine}</argLine>
           <trimStackTrace>false</trimStackTrace>
           <excludes>
             <exclude>org/assertj/core/osgi/**</exclude>
@@ -654,7 +670,7 @@
       <plugin>
         <groupId>org.pitest</groupId>
         <artifactId>pitest-maven</artifactId>
-        <version>1.7.1</version>
+        <version>1.7.4</version>
         <dependencies>
           <dependency>
             <groupId>org.pitest</groupId>

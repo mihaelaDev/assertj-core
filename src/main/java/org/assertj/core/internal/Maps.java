@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.internal;
 
@@ -48,6 +48,7 @@ import static org.assertj.core.internal.CommonValidations.checkSizes;
 import static org.assertj.core.internal.CommonValidations.hasSameSizeAsCheck;
 import static org.assertj.core.internal.ErrorMessages.keysToLookForIsEmpty;
 import static org.assertj.core.internal.ErrorMessages.keysToLookForIsNull;
+import static org.assertj.core.internal.ErrorMessages.valuesToLookForIsEmpty;
 import static org.assertj.core.util.Arrays.array;
 import static org.assertj.core.util.Arrays.asList;
 import static org.assertj.core.util.IterableUtil.toArray;
@@ -319,15 +320,17 @@ public class Maps {
         found.add(entry);
       }
     }
-    if (found.isEmpty()) return;
-    throw failures.failure(info, shouldNotContain(actual, entries, found));
+    if (!found.isEmpty()) throw failures.failure(info, shouldNotContain(actual, entries, found));
   }
 
   public <K, V> void assertContainsKeys(AssertionInfo info, Map<K, V> actual, K[] keys) {
     assertNotNull(info, actual);
+    requireNonNull(keys, keysToLookForIsNull("array of keys"));
+    if (actual.isEmpty() && keys.length == 0) return;
+    failIfEmpty(keys, keysToLookForIsEmpty("array of keys"));
+
     Set<K> notFound = getNotFoundKeys(actual, keys);
-    if (notFound.isEmpty()) return;
-    throw failures.failure(info, shouldContainKeys(actual, notFound));
+    if (!notFound.isEmpty()) throw failures.failure(info, shouldContainKeys(actual, notFound));
   }
 
   public <K, V> void assertContainsKey(AssertionInfo info, Map<K, V> actual, K key) {
@@ -336,7 +339,7 @@ public class Maps {
 
   public <K, V> void assertDoesNotContainKey(AssertionInfo info, Map<K, V> actual, K key) {
     assertNotNull(info, actual);
-    if (actual.containsKey(key)) throw failures.failure(info, shouldNotContainKey(actual, key));
+    if (containsKey(actual, key)) throw failures.failure(info, shouldNotContainKey(actual, key));
   }
 
   public <K, V> void assertDoesNotContainKeys(AssertionInfo info, Map<K, V> actual, K[] keys) {
@@ -351,8 +354,7 @@ public class Maps {
   }
 
   public <K, V> void assertContainsOnlyKeys(AssertionInfo info, Map<K, V> actual, Iterable<? extends K> keys) {
-    final K[] keysAsArray = toArray(keys);
-    assertContainsOnlyKeys(info, actual, "keys iterable", keysAsArray);
+    assertContainsOnlyKeys(info, actual, "keys iterable", toArray(keys));
   }
 
   private <K, V> void assertContainsOnlyKeys(AssertionInfo info, Map<K, V> actual, String placeholderForErrorMessages, K[] keys) {
@@ -374,7 +376,7 @@ public class Maps {
     // Stream API avoided for performance reasons
     Set<K> found = new LinkedHashSet<>();
     for (K expectedKey : expectedKeys) {
-      if (actual.containsKey(expectedKey)) found.add(expectedKey);
+      if (containsKey(actual, expectedKey)) found.add(expectedKey);
     }
     return found;
   }
@@ -383,9 +385,18 @@ public class Maps {
     // Stream API avoided for performance reasons
     Set<K> notFound = new LinkedHashSet<>();
     for (K expectedKey : expectedKeys) {
-      if (!actual.containsKey(expectedKey)) notFound.add(expectedKey);
+      if (!containsKey(actual, expectedKey)) notFound.add(expectedKey);
     }
     return notFound;
+  }
+
+  private static <K> boolean containsKey(Map<K, ?> actual, K key) {
+    try {
+      return actual.containsKey(key);
+    } catch (NullPointerException e) {
+      if (key == null) return false; // null keys not permitted
+      throw e;
+    }
   }
 
   private static <K> Set<K> getNotExpectedKeys(Map<K, ?> actual, K[] expectedKeys) {
@@ -396,7 +407,7 @@ public class Maps {
         clonedMap.remove(expectedKey);
       }
       return clonedMap.keySet();
-    } catch (NoSuchMethodException | UnsupportedOperationException e) {
+    } catch (NoSuchMethodException | RuntimeException e) {
       // actual cannot be cloned or is unmodifiable, falling back to LinkedHashMap
       Map<K, ?> copiedMap = new LinkedHashMap<>(actual);
       for (K expectedKey : expectedKeys) {
@@ -429,24 +440,40 @@ public class Maps {
 
   public <K, V> void assertContainsValue(AssertionInfo info, Map<K, V> actual, V value) {
     assertNotNull(info, actual);
-    if (!actual.containsValue(value)) throw failures.failure(info, shouldContainValue(actual, value));
+    if (!containsValue(actual, value)) throw failures.failure(info, shouldContainValue(actual, value));
   }
 
   public <K, V> void assertContainsValues(AssertionInfo info, Map<K, V> actual, V[] values) {
     assertNotNull(info, actual);
     requireNonNull(values, "The array of values to look for should not be null");
     if (actual.isEmpty() && values.length == 0) return;
-    //
-    Set<V> valuesNotFound = new LinkedHashSet<>();
-    for (V valueToLookFor : values) {
-      if (!actual.containsValue(valueToLookFor)) valuesNotFound.add(valueToLookFor);
-    }
-    if (!valuesNotFound.isEmpty()) throw failures.failure(info, shouldContainValues(actual, valuesNotFound));
+    failIfEmpty(values, valuesToLookForIsEmpty());
+
+    Set<V> notFound = getNotFoundValues(actual, values);
+    if (!notFound.isEmpty()) throw failures.failure(info, shouldContainValues(actual, notFound));
   }
 
   public <K, V> void assertDoesNotContainValue(AssertionInfo info, Map<K, V> actual, V value) {
     assertNotNull(info, actual);
-    if (actual.containsValue(value)) throw failures.failure(info, shouldNotContainValue(actual, value));
+    if (containsValue(actual, value)) throw failures.failure(info, shouldNotContainValue(actual, value));
+  }
+
+  private static <V> Set<V> getNotFoundValues(Map<?, V> actual, V[] expectedValues) {
+    // Stream API avoided for performance reasons
+    Set<V> notFound = new LinkedHashSet<>();
+    for (V expectedValue : expectedValues) {
+      if (!containsValue(actual, expectedValue)) notFound.add(expectedValue);
+    }
+    return notFound;
+  }
+
+  private static <V> boolean containsValue(Map<?, V> actual, V value) {
+    try {
+      return actual.containsValue(value);
+    } catch (NullPointerException e) {
+      if (value == null) return false; // null values not permitted
+      throw e;
+    }
   }
 
   public <K, V> void assertContainsOnly(AssertionInfo info, Map<K, V> actual, Entry<? extends K, ? extends V>[] entries) {
@@ -487,7 +514,7 @@ public class Maps {
       Map<K, V> clonedMap = clone(actual);
       removeEntries(clonedMap, expectedEntries);
       return clonedMap;
-    } catch (NoSuchMethodException | UnsupportedOperationException e) {
+    } catch (NoSuchMethodException | RuntimeException e) {
       // actual cannot be cloned or is unmodifiable, falling back to LinkedHashMap
       Map<K, V> copiedMap = new LinkedHashMap<>(actual);
       removeEntries(copiedMap, expectedEntries);

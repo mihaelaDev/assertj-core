@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -45,6 +45,7 @@ import static org.assertj.core.util.Sets.newLinkedHashSet;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -2151,13 +2152,13 @@ class SoftAssertionsTest extends BaseAssertionsTest {
     String base64String = "QXNzZXJ0Sg==";
     // WHEN
     softly.assertThat(base64String)
-          .as("decodedAsBase64()")
+          .as("asBase64Decoded()")
           .overridingErrorMessage("error message 1")
-          .decodedAsBase64()
+          .asBase64Decoded()
           .isEmpty();
     // THEN
     then(softly.errorsCollected()).extracting(Throwable::getMessage)
-                                  .containsExactly("[decodedAsBase64()] error message 1");
+                                  .containsExactly("[asBase64Decoded()] error message 1");
   }
 
   @Test
@@ -2166,13 +2167,13 @@ class SoftAssertionsTest extends BaseAssertionsTest {
     byte[] byteArray = "AssertJ".getBytes();
     // WHEN
     softly.assertThat(byteArray)
-          .as("encodedAsBase64()")
+          .as("asBase64Encoded()")
           .overridingErrorMessage("error message 1")
-          .encodedAsBase64()
+          .asBase64Encoded()
           .isEmpty();
     // THEN
     then(softly.errorsCollected()).extracting(Throwable::getMessage)
-                                  .containsExactly("[encodedAsBase64()] error message 1");
+                                  .containsExactly("[asBase64Encoded()] error message 1");
   }
 
   @Test
@@ -2181,7 +2182,7 @@ class SoftAssertionsTest extends BaseAssertionsTest {
     String base64String = "QXNzZXJ0Sg==";
     // WHEN
     softly.assertThat(base64String)
-          .decodedAsBase64()
+          .asBase64Decoded()
           .containsExactly("AssertJ".getBytes());
     // THEN
     softly.assertAll();
@@ -2193,7 +2194,7 @@ class SoftAssertionsTest extends BaseAssertionsTest {
     byte[] byteArray = "AssertJ".getBytes();
     // WHEN
     softly.assertThat(byteArray)
-          .encodedAsBase64()
+          .asBase64Encoded()
           .isEqualTo("QXNzZXJ0Sg==");
     // THEN
     softly.assertAll();
@@ -2377,6 +2378,23 @@ class SoftAssertionsTest extends BaseAssertionsTest {
   }
 
   @Test
+  void soft_assertions_should_work_with_satisfies() {
+    // GIVEN
+    TolkienCharacter legolas = TolkienCharacter.of("Legolas", 1000, ELF);
+    Consumer<TolkienCharacter> isHobbit = tolkienCharacter -> assertThat(tolkienCharacter.getRace()).isEqualTo(HOBBIT);
+    Consumer<TolkienCharacter> isElf = tolkienCharacter -> assertThat(tolkienCharacter.getRace()).isEqualTo(ELF);
+    Consumer<TolkienCharacter> isMan = tolkienCharacter -> assertThat(tolkienCharacter.getRace()).isEqualTo(MAN);
+    // WHEN
+    softly.assertThat(legolas).as("satisfies").satisfies(isHobbit, isElf, isMan);
+    // THEN
+    List<Throwable> errorsCollected = softly.errorsCollected();
+    assertThat(errorsCollected).hasSize(1);
+    assertThat(errorsCollected.get(0)).hasMessageContaining("[satisfies] ")
+                                      .hasMessageContaining("HOBBIT")
+                                      .hasMessageContaining("MAN");
+  }
+
+  @Test
   void soft_assertions_should_work_with_assertThatObject() {
     // GIVEN
     TolkienCharacter legolas = TolkienCharacter.of("Legolas", 1000, ELF);
@@ -2476,7 +2494,7 @@ class SoftAssertionsTest extends BaseAssertionsTest {
     // WHEN
     softly.assertThat(throwable)
           .hasMessage("not top level message")
-          .getCause()
+          .cause()
           .hasMessage("not cause message");
     // THEN
     List<Throwable> errorsCollected = softly.errorsCollected();
@@ -2494,7 +2512,7 @@ class SoftAssertionsTest extends BaseAssertionsTest {
     // WHEN
     softly.assertThat(throwable)
           .hasMessage("not top level message")
-          .getRootCause()
+          .rootCause()
           .hasMessage("not root cause message");
     // THEN
     List<Throwable> errorsCollected = softly.errorsCollected();
@@ -2548,4 +2566,58 @@ class SoftAssertionsTest extends BaseAssertionsTest {
                                   .containsExactly("[content()] error message",
                                                    "[content(UTF_8)] error message");
   }
+
+  @Test
+  void file_soft_assertions_should_work_with_navigation_methods() {
+    // GIVEN
+    File file = new File("src/test/resources/actual_file.txt");
+    // WHEN
+    softly.assertThat(file)
+          .overridingErrorMessage("error message")
+          .as("size()")
+          .size()
+          .isGreaterThan(0)
+          .isLessThan(1)
+          .returnToFile()
+          .as("content()")
+          .content()
+          .startsWith("actual")
+          .startsWith("123");
+    // THEN
+    then(softly.errorsCollected()).extracting(Throwable::getMessage)
+                                  .containsExactly("[size()] error message", "[content()] error message");
+  }
+
+  @Test
+  void throwable_soft_assertions_should_work_with_message_navigation_method() {
+    // GIVEN
+    Throwable throwable = new Throwable("Boom!");
+    // WHEN
+    softly.assertThat(throwable)
+          .message()
+          .overridingErrorMessage("startsWith")
+          .startsWith("bar")
+          .overridingErrorMessage("endsWith")
+          .endsWith("?");
+    // THEN
+    assertThat(softly.errorsCollected()).extracting(Throwable::getMessage)
+                                        .containsExactly("startsWith", "endsWith");
+  }
+
+  @Test
+  void big_decimal_soft_assertions_should_work_with_scale_navigation_method() {
+    // GIVEN
+    BigDecimal bigDecimal = new BigDecimal(BigInteger.TEN, 5);
+    // WHEN
+    softly.assertThat(bigDecimal)
+          .scale()
+          .overridingErrorMessage("isGreaterThan")
+          .isGreaterThan(6)
+          .overridingErrorMessage("isLessThan")
+          .isLessThan(4);
+    // THEN
+    assertThat(softly.errorsCollected()).extracting(Throwable::getMessage)
+                                        .containsExactly("isGreaterThan", "isLessThan");
+  }
+
 }

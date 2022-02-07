@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -18,6 +18,7 @@ import static java.util.stream.StreamSupport.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.filter.Filters.filter;
 import static org.assertj.core.description.Description.mostRelevantDescription;
+import static org.assertj.core.error.ShouldNotBeNull.shouldNotBeNull;
 import static org.assertj.core.extractor.Extractors.byName;
 import static org.assertj.core.extractor.Extractors.extractedDescriptionOf;
 import static org.assertj.core.extractor.Extractors.extractedDescriptionOfMethod;
@@ -1391,6 +1392,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
   }
 
   private <V> AbstractListAssert<?, List<? extends V>, V, ObjectAssert<V>> internalExtracting(Function<? super ELEMENT, V> extractor) {
+    if (actual == null) throwAssertionError(shouldNotBeNull());
     List<V> values = FieldsOrPropertiesExtractor.extract(actual, extractor);
     return newListAssertInstanceForMethodsChangingElementType(values);
   }
@@ -1749,6 +1751,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
   // The public method for it (the one not ending with "ForProxy") is marked as final and annotated with @SafeVarargs
   // in order to avoid compiler warning in user code
   protected AbstractListAssert<?, List<? extends Object>, Object, ObjectAssert<Object>> flatExtractingForProxy(Function<? super ELEMENT, ?>[] extractors) {
+    if (actual == null) throwAssertionError(shouldNotBeNull());
     Stream<? extends ELEMENT> actualStream = stream(actual.spliterator(), false);
     List<Object> result = actualStream.flatMap(element -> Stream.of(extractors).map(extractor -> extractor.apply(element)))
                                       .collect(toList());
@@ -1949,12 +1952,12 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
   // The public method for it (the one not ending with "ForProxy") is marked as final and annotated with @SafeVarargs
   // in order to avoid compiler warning in user code
   protected AbstractListAssert<?, List<? extends Tuple>, Tuple, ObjectAssert<Tuple>> extractingForProxy(Function<? super ELEMENT, ?>[] extractors) {
+    if (actual == null) throwAssertionError(shouldNotBeNull());
     // combine all extractors into one function
     Function<ELEMENT, Tuple> tupleExtractor = objectToExtractValueFrom -> new Tuple(Stream.of(extractors)
                                                                                           .map(extractor -> extractor.apply(objectToExtractValueFrom))
                                                                                           .toArray());
-    List<Tuple> tuples = stream(actual.spliterator(), false).map(tupleExtractor)
-                                                            .collect(toList());
+    List<Tuple> tuples = stream(actual.spliterator(), false).map(tupleExtractor).collect(toList());
     return newListAssertInstanceForMethodsChangingElementType(tuples);
   }
 
@@ -2242,7 +2245,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
   @Deprecated
   @CheckReturnValue
   public <T> SELF usingComparatorForElementFieldsWithType(Comparator<T> comparator, Class<T> type) {
-    getComparatorsForElementPropertyOrFieldTypes().put(type, comparator);
+    getComparatorsForElementPropertyOrFieldTypes().registerComparator(type, comparator);
     return myself;
   }
 
@@ -2278,8 +2281,8 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
       usingElementComparator(new ExtendedByTypesComparator(getComparatorsByType()));
     }
 
-    getComparatorsForElementPropertyOrFieldTypes().put(type, comparator);
-    getComparatorsByType().put(type, comparator);
+    getComparatorsForElementPropertyOrFieldTypes().registerComparator(type, comparator);
+    getComparatorsByType().registerComparator(type, comparator);
 
     return myself;
   }
@@ -3532,7 +3535,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
   }
 
   /**
-   * Verifies that the {@link Iterable} under test contains a single element and allows to perform assertions that element.
+   * Verifies that the {@link Iterable} under test contains a single element and allows to perform assertions on that element.
    * <p>
    * This is a shorthand for <code>hasSize(1).first()</code>.
    * <p>
@@ -3544,7 +3547,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
    * <li>the general <code>assertThat(Iterable)</code> and narrow down the single element with an assert factory, see: {@link #singleElement(InstanceOfAssertFactory) singleElement(element assert factory)}</li>
    * </ul>
    * <p>
-   * Example: default {@code Object} assertions
+   * Example:
    * <pre><code class='java'> List&lt;String&gt; babySimpsons = list("Maggie");
    *
    * // assertion succeeds, only Object assertions are available after singleElement()
@@ -3599,12 +3602,12 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
   }
 
   /**
-   * Verifies that the {@link Iterable} under test contains a single element and allows to perform assertions on that element.<br>
-   * The assertions are strongly typed according to the given {@link AssertFactory} parameter.
+   * Verifies that the {@link Iterable} under test contains a single element and allows to perform assertions on that element, 
+   * the assertions are strongly typed according to the given {@link AssertFactory} parameter.
    * <p>
    * This is a shorthand for <code>hasSize(1).first(assertFactory)</code>.
    * <p>
-   * Example: use of {@code String} assertions after {@code singleElement(as(STRING)}
+   * Example: use of {@code String} assertions after {@code singleElement(as(STRING))}
    * <pre><code class='java'> import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
    * import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
    * import static org.assertj.core.api.Assertions.as; // syntactic sugar
@@ -3644,7 +3647,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
 
   private ELEMENT_ASSERT internalSingleElement() {
     iterables.assertHasSize(info, actual, 1);
-    return internalFirst();
+    return toAssert(actual.iterator().next(), navigationDescription("check single element"));
   }
 
   /**
@@ -3796,7 +3799,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
     iterables.assertAnySatisfy(info, actual, requirements);
     return myself;
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -3817,7 +3820,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
     iterables.assertNoneSatisfy(info, actual, restrictions);
     return myself;
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -3835,7 +3838,7 @@ public abstract class AbstractIterableAssert<SELF extends AbstractIterableAssert
   public final SELF satisfiesExactly(ThrowingConsumer<? super ELEMENT>... requirements) {
     return satisfiesExactlyForProxy(requirements);
   }
-  
+
   // This method is protected in order to be proxied for SoftAssertions / Assumptions.
   // The public method for it (the one not ending with "ForProxy") is marked as final and annotated with @SafeVarargs
   // in order to avoid compiler warning in user code

@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -151,6 +151,25 @@ public abstract class AbstractUrlAssert<SELF extends AbstractUrlAssert<SELF>> ex
    */
   public SELF hasHost(String expected) {
     urls.assertHasHost(info, actual, expected);
+    return myself;
+  }
+
+  /**
+   * Verifies that the actual {@code URL} has no host.
+   * <p>
+   * Examples:
+   * <pre><code class='java'> // This assertion succeeds:
+   * assertThat(new URL("file:///home/user/Documents/hello-world.txt")).hasNoHost();
+   *
+   * // This assertion fails:
+   * assertThat(new URL("http://helloworld.org:8080/index.html")).hasNoHost();</code></pre>
+   *
+   * @return {@code this} assertion object.
+   * @throws AssertionError if actual has a host.
+   * @since 3.22.0
+   */
+  public SELF hasNoHost() {
+    urls.assertHasNoHost(info, actual);
     return myself;
   }
 

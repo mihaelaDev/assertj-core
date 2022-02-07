@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -398,9 +398,13 @@ public abstract class AbstractCompletableFutureAssert<SELF extends AbstractCompl
 
   private ObjectAssert<RESULT> internalSucceedsWithin(Duration timeout) {
     RESULT result = futures.assertSucceededWithin(info, actual, timeout);
-    return assertThat(result);
+    return newObjectAssert(result);
   }
 
+  // introduced to be proxied for assumptions and soft assertions.
+  protected ObjectAssert<RESULT> newObjectAssert(RESULT objectUnderTest) {
+    return new ObjectAssert<>(objectUnderTest);
+  }
   /**
    * Waits if necessary for at most the given time for this future to complete, and then returns its result for further assertions.
    * <p>
@@ -436,7 +440,7 @@ public abstract class AbstractCompletableFutureAssert<SELF extends AbstractCompl
 
   private ObjectAssert<RESULT> internalSucceedsWithin(long timeout, TimeUnit unit) {
     RESULT result = futures.assertSucceededWithin(info, actual, timeout, unit);
-    return assertThat(result);
+    return newObjectAssert(result);
   }
 
   /**

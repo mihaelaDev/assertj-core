@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.internal;
 
@@ -521,7 +521,10 @@ public class Files {
     assertIsDirectory(info, actual);
     File[] items = actual.listFiles(filter);
     requireNonNull(items, "Directory listing should not be null");
-    return list(items);
+    List<File> files = list(items);
+    // sort files for test consistency and nicer error message output
+    files.sort(comparing(File::toString));
+    return files;
   }
 
   private List<File> directoryContent(AssertionInfo info, File actual) {

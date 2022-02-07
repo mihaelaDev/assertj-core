@@ -8,12 +8,13 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api.recursive.comparison;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.BDDAssertions.entry;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.recursive.comparison.Color.BLUE;
 import static org.assertj.core.api.recursive.comparison.Color.GREEN;
@@ -21,15 +22,20 @@ import static org.assertj.core.api.recursive.comparison.ColorWithCode.RED;
 import static org.assertj.core.api.recursive.comparison.RecursiveComparisonAssert_isEqualTo_Test.EmployeeDTO.JobTitle.QA_ENGINEER;
 import static org.assertj.core.error.ShouldBeEqual.shouldBeEqual;
 import static org.assertj.core.error.ShouldNotBeNull.shouldNotBeNull;
-import static org.assertj.core.test.AlwaysEqualComparator.ALWAY_EQUALS_STRING;
+import static org.assertj.core.test.AlwaysEqualComparator.ALWAYS_EQUALS_STRING;
+import static org.assertj.core.test.Maps.mapOf;
 import static org.assertj.core.util.Lists.list;
+import static org.assertj.core.util.Maps.newHashMap;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.verify;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.assertj.core.api.RecursiveComparisonAssert_isEqualTo_BaseTest;
@@ -38,11 +44,15 @@ import org.assertj.core.internal.objects.data.FriendlyPerson;
 import org.assertj.core.internal.objects.data.Giant;
 import org.assertj.core.internal.objects.data.Human;
 import org.assertj.core.internal.objects.data.Person;
+import org.assertj.core.util.DoubleComparator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @DisplayName("RecursiveComparisonAssert isEqualTo")
 class RecursiveComparisonAssert_isEqualTo_Test extends RecursiveComparisonAssert_isEqualTo_BaseTest {
@@ -84,11 +94,11 @@ class RecursiveComparisonAssert_isEqualTo_Test extends RecursiveComparisonAssert
     // GIVEN
     Person actual = new Person("John");
     // WHEN
-    RecursiveComparisonConfiguration assertion = assertThat(actual).usingComparatorForType(ALWAY_EQUALS_STRING, String.class)
+    RecursiveComparisonConfiguration assertion = assertThat(actual).usingComparatorForType(ALWAYS_EQUALS_STRING, String.class)
                                                                    .usingRecursiveComparison()
                                                                    .getRecursiveComparisonConfiguration();
     // THEN
-    assertThat(assertion.comparatorByTypes()).contains(entry(String.class, ALWAY_EQUALS_STRING));
+    assertThat(assertion.comparatorByTypes()).contains(entry(String.class, ALWAYS_EQUALS_STRING));
   }
 
   @Test
@@ -367,6 +377,128 @@ class RecursiveComparisonAssert_isEqualTo_Test extends RecursiveComparisonAssert
                           .isEqualTo(container2);
   }
 
+  // issue #2434
+  @Test
+  void should_treat_class_cast_expection_as_comparison_difference_when_comparing_lists() {
+    // GIVEN
+    Wrapper a = new Wrapper(Double.MAX_VALUE);
+    Wrapper b = new Wrapper(Integer.MAX_VALUE);
+    Wrappers actual = new Wrappers(a, b);
+    Wrappers expected = new Wrappers(b, a);
+    // WHEN/THEN
+    then(actual).usingRecursiveComparison()
+                .ignoringCollectionOrderInFields("values")
+                .isEqualTo(expected);
+  }
+
+  @Test
+  void should_report_class_cast_expection_as_comparison_difference() {
+    // GIVEN
+    Wrapper actual = new Wrapper(1.0);
+    Wrapper expected = new Wrapper(5);
+    // WHEN
+    compareRecursivelyFailsAsExpected(actual, expected);
+    // THEN
+    verifyShouldBeEqualByComparingFieldByFieldRecursivelyCall(actual, expected, diff("value", 1.0, 5));
+  }
+
+  @Test
+  void should_treat_class_cast_expection_as_comparison_difference_when_comparing_lists_with_specific_equals() {
+    // GIVEN
+    Wrapper a = new Wrapper(1.001);
+    Wrapper b = new Wrapper(1);
+    Wrappers actual = new Wrappers(a, b);
+    Wrappers expected = new Wrappers(b, a);
+    // WHEN/THEN
+    then(actual).usingRecursiveComparison()
+                .ignoringCollectionOrderInFields("values")
+                .withEqualsForType((x, y) -> Math.abs(x - y) <= 0.05, Double.class)
+                .isEqualTo(expected);
+  }
+
+  @Test
+  void should_treat_class_cast_expection_as_comparison_difference() {
+    // GIVEN
+    Wrapper a = new Wrapper(Double.MAX_VALUE);
+    Wrapper b = new Wrapper(Integer.MAX_VALUE);
+    Wrappers actual = new Wrappers(a, b);
+    Wrappers expected = new Wrappers(b, a);
+    // WHEN/THEN
+    then(actual).usingRecursiveComparison()
+                .withComparatorForFields(new DoubleComparator(0.01), "values.value")
+                .ignoringCollectionOrderInFields("values")
+                .isEqualTo(expected);
+  }
+
+  @Test
+  void should_not_handle_value_node_as_iterable() throws IOException {
+    // GIVEN
+    ObjectMapper om = new ObjectMapper();
+    JsonNode actual = om.readTree("{\"someNotImportantValue\":1,\"importantValue\":\"10\"}");
+    JsonNode expected = om.readTree("{\"someNotImportantValue\":10,\"importantValue\":\"1\"}");
+    // WHEN
+    compareRecursivelyFailsAsExpected(actual, expected);
+    // THEN
+    ComparisonDifference difference1 = diff("_children.importantValue._value", "10", "1");
+    ComparisonDifference difference2 = diff("_children.someNotImportantValue._value", 1, 10);
+    verifyShouldBeEqualByComparingFieldByFieldRecursivelyCall(actual, expected, difference1, difference2);
+  }
+
+  // issue #2459
+  @Test
+  void should_not_handle_object_node_as_iterable() throws IOException {
+    // GIVEN
+    ObjectMapper om = new ObjectMapper();
+    JsonNode actual = om.readTree("{\"someNotImportantValue\":1,\"importantValue\":\"10\"}");
+    JsonNode expected = om.readTree("{\"foo\":1,\"bar\":\"10\"}");
+    // WHEN
+    compareRecursivelyFailsAsExpected(actual, expected);
+    // THEN
+    ComparisonDifference difference = diff("_children",
+                                           mapOf(entry("importantValue", "10"), entry("someNotImportantValue", 1)),
+                                           mapOf(entry("bar", "10"), entry("foo", 1)),
+                                           format("The following keys were not found in the actual map value:%n  [foo, bar]"));
+    verifyShouldBeEqualByComparingFieldByFieldRecursivelyCall(actual, expected, difference);
+  }
+
+  @Test
+  void issue_2475_example_should_succeed() {
+    then(issue2475Map()).usingRecursiveComparison()
+                        .isEqualTo(issue2475Map());
+  }
+
+  private static Map<String, List<String>> issue2475Map() {
+    Map<String, List<String>> map = newHashMap("VMP", list("OztNUFPcnceerHAppabgHT",
+                                                           "IW",
+                                                           "AfBSmPEYfOBwGzWHzQveOi",
+                                                           "dSalYEgeHNTe",
+                                                           "mXjwEZBxeimMiWrmRVePVAwWHtRXfqQyD",
+                                                           "TGgLRwnPQUbZWFr",
+                                                           "pQWceZdDmTXdyQXcJdB",
+                                                           "ProMMnAnRXg"));
+    map.put("Uko", list("pUisdBNIy",
+                        "rfX",
+                        "BagGdILqDLrNRfotwKqjCVNOJxSNoYKtSgBLMEJEJymhZjZvDuwvsqBiJuJpmvWOkiuSobCjRkeWVenaqIdlltsiUMPNtKcDMOAKiRRHHfikxUnOotnJFzNjwyYrcbkNBjxlvici",
+                        "AR",
+                        "dDvIHrhSxskuTvDSdUZwoUDdxFxxaxBWkTiprWPqSPZumdoHkvwPRrecqCLagzeeOjCuSufGwLoKATVaXfIPmjYsVfGuwlyEysXwWbVfPLgbVkaPaQdcVFQfADfDKEJeuQZlKKSsfuXICYWrmOGILeuqXKZyfEXHLnGILUcWmaVRRjrSjXXnHiTXYgdkrDeLEXZnAlbIEUYSblPqOaxuvpmOS"));
+    return map;
+  }
+
+  public static class Wrappers {
+    private List<Wrapper> values;
+
+    public Wrappers(Wrapper a, Wrapper b) {
+      this.values = list(a, b);
+    }
+  }
+
+  static class Wrapper {
+    Object value;
+
+    Wrapper(Object value) {
+      this.value = value;
+    }
+  }
   public static class Container {
     private Path path;
 

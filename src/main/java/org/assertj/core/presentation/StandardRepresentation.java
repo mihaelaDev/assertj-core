@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.presentation;
 
@@ -262,7 +262,7 @@ public class StandardRepresentation implements Representation {
       return !Object.class.equals(classDeclaringToString);
     } catch (NoSuchMethodException | SecurityException e) {
       // NoSuchMethodException should not occur as toString is always defined.
-      // if SecurityException occurs, returning false to use our own representation 
+      // if SecurityException occurs, returning false to use our own representation
       return false;
     }
   }
@@ -273,7 +273,7 @@ public class StandardRepresentation implements Representation {
   private static boolean hasOverriddenToStringInSubclassOf(Class<?> objectClass, Class<?> clazz) {
     try {
       Class<?> classDeclaringToString = objectClass.getMethod("toString").getDeclaringClass();
-      // check if any classes between objectClass and clazz (excluded) have overridden toString 
+      // check if any classes between objectClass and clazz (excluded) have overridden toString
       Class<?> classToCheck = objectClass;
       while (!classToCheck.equals(clazz)) {
         if (classDeclaringToString.equals(classToCheck)) return true;
@@ -281,11 +281,18 @@ public class StandardRepresentation implements Representation {
       }
     } catch (NoSuchMethodException | SecurityException e) {
       // NoSuchMethodException should not occur as toString is always defined.
-      // if SecurityException occurs, returning false to use our own representation 
+      // if SecurityException occurs, returning false to use our own representation
     }
     return false;
   }
 
+  /**
+   * Returns the {@code String} representation of the given object with its type and hexadecimal identity hash code so that
+   * it can be differentiated from other objects with the same {@link #toStringOf(Object)} representation.
+   *
+   * @param obj the object to represent.
+   * @return the unambiguous {@code toString} representation of the given object.
+   */
   @Override
   public String unambiguousToStringOf(Object obj) {
     // some types have already an unambiguous toString, no need to double down
@@ -376,7 +383,11 @@ public class StandardRepresentation implements Representation {
   }
 
   protected String toStringOf(Class<?> c) {
-    return c.getCanonicalName();
+    String canonicalName = c.getCanonicalName();
+    if (canonicalName != null) return canonicalName;
+    if (c.getSimpleName().equals("")) return "anonymous class";
+    if (c.getSimpleName().equals("[]")) return "anonymous class array";
+    return String.format("local class %s", c.getSimpleName());
   }
 
   protected String toStringOf(String s) {

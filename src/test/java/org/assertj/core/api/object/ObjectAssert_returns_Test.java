@@ -8,27 +8,22 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api.object;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.from;
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.mockito.Mockito.verify;
 
-import java.util.function.Function;
-
-import org.assertj.core.api.AbstractObjectAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.assertj.core.api.ObjectAssertBaseTest;
-import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.assertj.core.test.Jedi;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for <code>{@link AbstractObjectAssert#returns(Object, Function)}</code>.
- *
  * @author Takuya "Mura-Mi" Murakami
  */
 class ObjectAssert_returns_Test extends ObjectAssertBaseTest {
@@ -45,17 +40,20 @@ class ObjectAssert_returns_Test extends ObjectAssertBaseTest {
 
   @Test
   void should_fail_with_throwing_NullPointerException_if_method_is_null() {
-    ThrowingCallable code = () -> assertions.returns("May the force be with you.", null);
-    assertThatThrownBy(code).isExactlyInstanceOf(NullPointerException.class)
-                            .hasMessage("The given getter method/Function must not be null");
+    // WHEN
+    Throwable thrown = catchThrowable(() -> assertions.returns("May the force be with you.", null));
+    // THEN
+    then(thrown).isInstanceOf(NullPointerException.class)
+                .hasMessage("The given getter method/Function must not be null");
   }
 
   @Test
   void perform_assertion_like_users() {
-
+    // GIVEN
     Jedi yoda = new Jedi("Yoda", "Green");
+    // WHEN/THEN
     assertThat(yoda).returns("Yoda", from(Jedi::getName))
                     .returns("Yoda", Jedi::getName);
-
   }
+
 }

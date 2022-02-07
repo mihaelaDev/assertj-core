@@ -8,13 +8,15 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.configuration;
 
 import static java.lang.String.format;
+import static org.assertj.core.util.Lists.newArrayList;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 
 /**
@@ -37,5 +39,10 @@ class Services {
                                 serviceType, result.getClass()));
     }
     return result;
+  }
+
+  public static <SERVICE> List<SERVICE> getAll(Class<SERVICE> serviceType) {
+    Iterator<SERVICE> services = ServiceLoader.load(serviceType, Services.class.getClassLoader()).iterator();
+    return newArrayList(services);
   }
 }

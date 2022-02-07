@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -603,7 +603,7 @@ public abstract class AbstractObjectAssert<SELF extends AbstractObjectAssert<SEL
    */
   @CheckReturnValue
   public <T> SELF usingComparatorForType(Comparator<? super T> comparator, Class<T> type) {
-    getComparatorsByType().put(type, comparator);
+    getComparatorsByType().registerComparator(type, comparator);
     return myself;
   }
 
@@ -654,7 +654,8 @@ public abstract class AbstractObjectAssert<SELF extends AbstractObjectAssert<SEL
    * <p>
    * Private fields are matched by default but this can be changed by calling {@link Assertions#setAllowExtractingPrivateFields(boolean) Assertions.setAllowExtractingPrivateFields(false)}.
    * <p>
-   * If you are looking to chain multiple assertions on different properties in a type safe way, consider chaining {@link #returns(Object, Function)} calls.
+   * If you are looking to chain multiple assertions on different properties in a type safe way, consider chaining
+   * {@link #returns(Object, Function)} and {@link #doesNotReturn(Object, Function)} calls.
    * <p>
    * Example:
    * <pre><code class='java'> public class TolkienCharacter {
@@ -1094,9 +1095,35 @@ public abstract class AbstractObjectAssert<SELF extends AbstractObjectAssert<SEL
   }
 
   /**
+   * Verifies that the object under test does not return the given expected value from the given {@link Function},
+   * a typical usage is to pass a method reference to assert object's property.
+   * <p>
+   * Wrapping the given {@link Function} with {@link Assertions#from(Function)} makes the assertion more readable.
+   * <p>
+   * Example:
+   * <pre><code class="java"> // from is not mandatory but it makes the assertions more readable
+   * assertThat(frodo).doesNotReturn("Bilbo", from(TolkienCharacter::getName))
+   *                  .doesNotReturn("Bilbo", TolkienCharacter::getName) // no from :(
+   *                  .doesNotReturn(null, from(TolkienCharacter::getRace));</code></pre>
+   *
+   * @param expected the value the object under test method's call should not return.
+   * @param from {@link Function} used to acquire the value to test from the object under test. Must not be {@code null}
+   * @param <T> the expected value type the given {@code method} returns.
+   * @return {@code this} assertion object.
+   * @throws NullPointerException if given {@code from} function is null
+   *
+   * @since 3.22.0
+   */
+  public <T> SELF doesNotReturn(T expected, Function<ACTUAL, T> from) {
+    requireNonNull(from, "The given getter method/Function must not be null");
+    objects.assertNotEqual(info, from.apply(actual), expected);
+    return myself;
+  }
+
+  /**
    * Enable using a recursive field by field comparison strategy when calling the chained {@link RecursiveComparisonAssert#isEqualTo(Object) isEqualTo} assertion.
    * <p>
-   * The detailed documentation available here: <a href="https://assertj.github.io/doc/#assertj-core-recursive-comparison">https://assertj.github.io/doc/#assertj-core-recursive-comparison</a>.
+   * The detailed documentation is available here: <a href="https://assertj.github.io/doc/#assertj-core-recursive-comparison">https://assertj.github.io/doc/#assertj-core-recursive-comparison</a>.
    * <p>
    * Example:
    * <pre><code class='java'> public class Person {

@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.util.introspection;
 
@@ -16,6 +16,7 @@ import static java.lang.String.format;
 import static org.assertj.core.util.Preconditions.checkArgument;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.assertj.core.util.VisibleForTesting;
 
@@ -60,18 +61,20 @@ public class PropertyOrFieldSupport {
     return getSimpleValue(propertyOrFieldName, input);
   }
 
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Object getSimpleValue(String name, Object input) {
-    // try to get name as a property, then try as a field, then try as a map key
+    // if input is an optional and name is "value", let's get the optional value directly
+    if (input instanceof Optional && name.equals("value")) return ((Optional) input).orElse(null);
+
     try {
+      // try to get name as a property
       return propertySupport.propertyValueOf(name, Object.class, input);
     } catch (IntrospectionError propertyIntrospectionError) {
-      // no luck as a property, let's try as a field
+      // try to get name as a field
       try {
         return fieldSupport.fieldValue(name, Object.class, input);
       } catch (IntrospectionError fieldIntrospectionError) {
-        // neither field nor property found with given name
-
-        // if the input object is a map, try name as a map key
+        // if input is a map, try to use the name value as a map key
         if (input instanceof Map) {
           Map<?, ?> map = (Map<?, ?>) input;
           if (map.containsKey(name)) return map.get(name);

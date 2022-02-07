@@ -8,15 +8,17 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.internal;
 
+import static org.assertj.core.test.TestData.someInfo;
 import static org.assertj.core.util.Arrays.array;
 import static org.mockito.Mockito.spy;
 
 import java.util.Comparator;
 
+import org.assertj.core.api.AssertionInfo;
 import org.assertj.core.util.CaseInsensitiveStringComparator;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -31,6 +33,8 @@ import org.junit.jupiter.api.BeforeEach;
  * @author Mikhail Mazursky
  */
 public class ObjectArraysBaseTest {
+
+  protected static final AssertionInfo INFO = someInfo();
 
   /**
    * is initialized with {@link #initActualArray()}

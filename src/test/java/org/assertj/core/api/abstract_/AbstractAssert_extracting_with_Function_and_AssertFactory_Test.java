@@ -8,15 +8,18 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api.abstract_;
 
+import static org.assertj.core.api.Assertions.assertThatObject;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.InstanceOfAssertFactories.CHAR_SEQUENCE;
 import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.assertj.core.error.ShouldNotBeNull.shouldNotBeNull;
+import static org.assertj.core.util.AssertionsUtil.expectAssertionError;
+import static org.assertj.core.util.FailureMessages.actualIsNull;
 
 import java.util.function.Function;
 
@@ -30,12 +33,9 @@ import org.assertj.core.api.abstract_.AbstractAssert_extracting_with_Function_an
 import org.assertj.core.test.Employee;
 import org.assertj.core.test.Name;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for <code>{@link AbstractAssert#extracting(Function, AssertFactory)}</code>.
- *
  * @author Stefano Cordio
  */
 class AbstractAssert_extracting_with_Function_and_AssertFactory_Test implements NavigationMethodBaseTest<TestAssert> {
@@ -115,6 +115,16 @@ class AbstractAssert_extracting_with_Function_and_AssertFactory_Test implements 
     Throwable error = catchThrowable(() -> underTest.extracting(bomb, Assertions::assertThat));
     // THEN
     then(error).isSameAs(explosion);
+  }
+
+  @Test
+  void should_throw_assertion_error_if_actual_is_null() {
+    // GIVEN
+    Object actual = null;
+    // WHEN
+    AssertionError assertionError = expectAssertionError(() -> assertThatObject(actual).extracting(Object::getClass));
+    // THEN
+    then(assertionError).hasMessage(actualIsNull());
   }
 
   @Override

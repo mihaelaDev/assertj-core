@@ -8,12 +8,12 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertWith;
 
 import java.util.function.Consumer;
@@ -26,8 +26,15 @@ class Assertions_assertWith_Test {
   private Jedi yoda = new Jedi("Yoda", "Green");
 
   @Test
-  void delegates_to_satisfies_object_assertion() {
+  void should_pass_satisfying_single_requirement() {
     assertWith(yoda, jedi -> assertThat(jedi.lightSaberColor).isEqualTo("Green"));
+  }
+
+  @Test
+  void should_pass_satisfying_multiple_requirements() {
+    assertWith(yoda,
+               jedi -> assertThat(jedi.lightSaberColor).isEqualTo("Green"),
+               jedi -> assertThat(jedi.getName()).isEqualTo("Yoda"));
   }
 
   @Test
@@ -40,8 +47,8 @@ class Assertions_assertWith_Test {
     // GIVEN
     Consumer<Jedi> nullRequirements = null;
     // WHEN/THEN
-    assertThatNullPointerException().isThrownBy(() -> assertWith(yoda, nullRequirements))
-                                    .withMessage("The Consumer<T> expressing the assertions requirements must not be null");
+    assertThatIllegalArgumentException().isThrownBy(() -> assertWith(yoda, nullRequirements))
+                                        .withMessage("No assertions group should be null");
   }
 
 }

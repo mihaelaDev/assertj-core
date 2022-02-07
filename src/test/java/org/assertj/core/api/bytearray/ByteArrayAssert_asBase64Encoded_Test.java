@@ -8,38 +8,34 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
-package org.assertj.core.api.string_;
+package org.assertj.core.api.bytearray;
 
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.mockito.Mockito.verify;
 
 import org.assertj.core.api.AbstractAssert;
-import org.assertj.core.api.AbstractByteArrayAssert;
+import org.assertj.core.api.AbstractStringAssert;
+import org.assertj.core.api.ByteArrayAssert;
+import org.assertj.core.api.ByteArrayAssertBaseTest;
 import org.assertj.core.api.NavigationMethodBaseTest;
-import org.assertj.core.api.StringAssert;
-import org.assertj.core.api.StringAssertBaseTest;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for <code>{@link StringAssert#decodedAsBase64()}</code>.
- *
  * @author Stefano Cordio
  */
-@DisplayName("StringAssert decodedAsBase64")
-class StringAssert_decodedAsBase64_Test extends StringAssertBaseTest implements NavigationMethodBaseTest<StringAssert> {
+class ByteArrayAssert_asBase64Encoded_Test extends ByteArrayAssertBaseTest implements NavigationMethodBaseTest<ByteArrayAssert> {
 
   @Override
-  protected StringAssert invoke_api_method() {
-    assertions.decodedAsBase64();
+  protected ByteArrayAssert invoke_api_method() {
+    assertions.asBase64Encoded();
     return null;
   }
 
   @Override
   protected void verify_internal_effects() {
-    verify(strings).assertIsBase64(getInfo(assertions), getActual(assertions));
+    verify(objects).assertNotNull(getInfo(assertions), getActual(assertions));
   }
 
   @Override
@@ -48,21 +44,21 @@ class StringAssert_decodedAsBase64_Test extends StringAssertBaseTest implements 
   }
 
   @Override
-  public StringAssert getAssertion() {
+  public ByteArrayAssert getAssertion() {
     return assertions;
   }
 
   @Override
-  public AbstractAssert<?, ?> invoke_navigation_method(StringAssert assertion) {
-    return assertion.decodedAsBase64();
+  public AbstractAssert<?, ?> invoke_navigation_method(ByteArrayAssert assertion) {
+    return assertion.asBase64Encoded();
   }
 
   @Test
-  void should_return_byte_array_assertion() {
+  void should_return_string_assertion() {
     // WHEN
-    AbstractAssert<?, ?> result = assertions.decodedAsBase64();
+    AbstractAssert<?, ?> result = assertions.asBase64Encoded();
     // THEN
-    then(result).isInstanceOf(AbstractByteArrayAssert.class);
+    then(result).isInstanceOf(AbstractStringAssert.class);
   }
 
 }

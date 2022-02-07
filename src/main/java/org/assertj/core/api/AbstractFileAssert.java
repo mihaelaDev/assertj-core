@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -1392,6 +1392,34 @@ public abstract class AbstractFileAssert<SELF extends AbstractFileAssert<SELF>> 
   public SELF hasNoExtension() {
     files.assertHasNoExtension(info, actual);
     return myself;
+  }
+
+  /**
+   * Returns an {@code Assert} object that allows performing assertions on the size of the {@link File} under test.
+   * <p>
+   * Once this method is called, the object under test is no longer the {@link File} but its size,
+   * to perform assertions on the {@link File}, call {@link AbstractFileSizeAssert#returnToFile()}.
+   * <p>
+   * Example:
+   * <pre><code class='java'> File file = File.createTempFile(&quot;tmp&quot;, &quot;bin&quot;);
+   * Files.write(file.toPath(), new byte[] {1, 1});
+   *
+   * // assertions succeed
+   * assertThat(file).size().isGreaterThan(1L).isLessThan(5L)
+   *                 .returnToFile().hasBinaryContent(new byte[] {1, 1});
+   *
+   * // assertions fails
+   * assertThat(file).size().isBetween(5L, 10L);</code></pre>
+   *
+   * @return AbstractFileSizeAssert built with the {@code File}'s size.
+   * @throws NullPointerException if the given {@code File} is {@code null}.
+   * @since 3.22.0
+   */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @CheckReturnValue
+  public AbstractFileSizeAssert<SELF> size() {
+    requireNonNull(actual, "Can not perform assertions on the size of a null file.");
+    return new FileSizeAssert(this);
   }
 
   // this method was introduced to avoid to avoid double proxying in soft assertions for content()

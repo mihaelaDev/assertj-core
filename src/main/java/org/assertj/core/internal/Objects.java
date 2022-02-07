@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.internal;
 
@@ -703,7 +703,7 @@ public class Objects {
     if (fieldComparator != null) return fieldComparator.compare(actualFieldValue, otherFieldValue) == 0;
     // check if a type comparators exist for the field type
     Class fieldType = actualFieldValue != null ? actualFieldValue.getClass() : otherFieldValue.getClass();
-    Comparator typeComparator = comparatorByType.get(fieldType);
+    Comparator typeComparator = comparatorByType.getComparatorForType(fieldType);
     if (typeComparator != null) return typeComparator.compare(actualFieldValue, otherFieldValue) == 0;
     // default comparison using equals
     return deepEquals(actualFieldValue, otherFieldValue);

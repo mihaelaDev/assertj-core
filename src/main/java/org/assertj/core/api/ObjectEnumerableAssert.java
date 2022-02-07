@@ -8,7 +8,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api;
 
@@ -208,10 +208,10 @@ public interface ObjectEnumerableAssert<SELF extends ObjectEnumerableAssert<SELF
    * Iterable&lt;Ring&gt; elvesRingsDifferentOrder = newArrayList(nenya, narya, vilya, vilya);
    *
    * // assertion will pass
-   * assertThat(elvesRings).containsExactlyInAnyOrder(elvesRingsDifferentOrder);
+   * assertThat(elvesRings).containsExactlyInAnyOrderElementsOf(elvesRingsDifferentOrder);
    *
    * // assertion will fail as vilya is contained twice in elvesRings.
-   * assertThat(elvesRings).containsExactlyInAnyOrder(elvesRingsSomeMissing);</code></pre>
+   * assertThat(elvesRings).containsExactlyInAnyOrderElementsOf(elvesRingsSomeMissing);</code></pre>
    * <p>
    * If you want to directly specify the elements to check, use {@link #containsExactlyInAnyOrder(Object...) containsExactlyInAnyOrder(Object...)} instead.
    *

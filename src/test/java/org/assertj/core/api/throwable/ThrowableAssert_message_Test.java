@@ -8,47 +8,50 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  */
 package org.assertj.core.api.throwable;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.error.ShouldHaveCause.shouldHaveCause;
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.util.AssertionsUtil.expectAssertionError;
 import static org.assertj.core.util.FailureMessages.actualIsNull;
 
+import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.jupiter.api.Test;
 
-class ThrowableAssert_getCause_Test {
-
-  private final Throwable cause = new NullPointerException();
+/**
+ * Tests for <code>{@link AbstractThrowableAssert#message()}</code>.
+ *
+ * @author Trang Nguyen
+ */
+class ThrowableAssert_message_Test {
 
   @Test
-  void should_return_throwable_assertions_for_actual_cause() {
+  void should_return_string_assertions_for_actual_message() {
     // GIVEN
-    Throwable throwable = new Throwable(cause);
+    Throwable throwable = new Throwable("boom!");
     // WHEN/THEN
-    assertThat(throwable).getCause()
-                         .isSameAs(cause);
+    assertThat(throwable).message()
+                         .isSameAs(throwable.getMessage());
   }
 
   @Test
-  void should_fail_if_actual_has_no_cause() {
+  void should_return_string_assertions_for_actual_message_even_if_null() {
     // GIVEN
-    Throwable actual = new Throwable();
-    // WHEN
-    AssertionError error = expectAssertionError(() -> assertThat(actual).getCause());
-    // THEN
-    assertThat(error).hasMessage(shouldHaveCause(actual).create());
+    Throwable throwable = new Throwable();
+    // WHEN/THEN
+    assertThat(throwable).message().isNull();
   }
 
   @Test
-  void should_fail_if_actual_is_null() {
+  void should_fail_when_throwable_is_null() {
     // GIVEN
     Throwable actual = null;
     // WHEN
-    AssertionError error = expectAssertionError(() -> assertThat(actual).getCause());
+    AssertionError assertionError = expectAssertionError(() -> assertThat(actual).message());
     // THEN
-    assertThat(error).hasMessage(actualIsNull());
+    then(assertionError).hasMessage(actualIsNull());
   }
+
 }
